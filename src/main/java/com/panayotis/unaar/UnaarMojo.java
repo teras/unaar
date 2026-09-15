@@ -17,10 +17,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -41,6 +38,14 @@ public class UnaarMojo extends AbstractMojo {
 
     @Parameter(property = "shadowGroup")
     private String shadowGroup;
+
+    @Parameter(property = "repositoryId")
+    private String repositoryId;
+
+    @Parameter(property = "repositoryUrl")
+    private String repositoryUrl;
+
+    // System specific parameters
 
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject mavenProject;
@@ -114,6 +119,31 @@ public class UnaarMojo extends AbstractMojo {
                         pluginManager
                 )
         );
+
+        if (repositoryId != null && repositoryUrl != null)
+            executeMojo(
+                    plugin(
+                            groupId("org.apache.maven.plugins"),
+                            artifactId("maven-deploy-plugin"),
+                            version("2.8.2")
+                    ),
+                    goal("deploy-file"),
+                    configuration(
+                            element(name("file"), jar.getAbsolutePath()),
+                            element(name("groupId"), shadowed.groupId),
+                            element(name("artifactId"), shadowed.artifactId),
+                            element(name("version"), shadowed.version),
+                            element(name("packaging"), shadowed.packaging),
+                            element(name("generatePom"), "true"),
+                            element(name("repositoryId"), repositoryId),
+                            element((name("url")), repositoryUrl)
+                    ),
+                    executionEnvironment(
+                            mavenProject,
+                            mavenSession,
+                            pluginManager
+                    )
+            );
         return true;
     }
 
